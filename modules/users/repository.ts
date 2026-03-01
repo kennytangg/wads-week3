@@ -14,12 +14,12 @@ export class UserRepository {
     }
 
     // get all users
-    getUsers(): User[] {
+    async getUsers(): Promise<User[]> {
         return this.data;
     }
 
     // get single user by id
-    getUserById(id: string): User | null {
+    async getUserById(id: string): Promise<User | null> {
         const user = this.data.find(user => user.id === id);
         if (!user) return null;
 
@@ -27,7 +27,7 @@ export class UserRepository {
     }
 
     // create a user
-    createUser({ username, email }: CreateUser): User {
+    async createUser({ username, email }: CreateUser): Promise<User> {
         const newUser: User = {
             id: Date.now().toString(),
             username: username,
@@ -40,7 +40,7 @@ export class UserRepository {
     }
 
     // update a user
-    updateUser(id: string, data: UpdateUser): User | null {
+    async updateUser(id: string, data: UpdateUser): Promise<User | null> {
         const index = this.data.findIndex(user => user.id === id);
         if (index === -1) {
             return null;
@@ -53,7 +53,7 @@ export class UserRepository {
     }
 
     // delete a user
-    deleteUser(id: string): boolean {
+    async deleteUser(id: string): Promise<boolean> {
         const idx = this.data.findIndex(user => user.id === id);
 
         if (idx === -1) {
