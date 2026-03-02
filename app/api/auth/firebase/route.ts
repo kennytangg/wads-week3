@@ -14,22 +14,30 @@ export async function POST(req: NextRequest) {
     try {
         const decodedToken = await adminAuth.verifyIdToken(idToken, true);
 
-        // Upsert user to PostgreSQL Database
+        const uid = decodedToken.uid;
+        const email = decodedToken.email;
+        if (!email) {
+            return NextResponse.json({ error: "Email not found in token" }, { status: 401 });
+        }
+
+        const userRecord = await adminAuth.getUser(uid);
+        const name = userRecord.displayName ?? decodedToken.name ?? null;
+        const image = userRecord.photoURL ?? (decodedToken as { picture?: string }).picture ?? null;
+
         const user = await prisma.user.upsert({
-            where: { email: decodedToken.email! },
+            where: { email },
             update: {
-                name: decodedToken.name || null,
-                image: decodedToken.picture || null,
+                name,
+                image,
             },
             create: {
-                email: decodedToken.email!,
-                name: decodedToken.name || null,
-                image: decodedToken.picture || null,
-                emailVerified: decodedToken.email_verified || false,
+                email,
+                name,
+                image,
+                emailVerified: decodedToken.email_verified ?? false,
             },
         });
 
-        // Set session cookie
         const response = NextResponse.json({ status: "success", userId: user.id });
         response.cookies.set("session", idToken, {
             httpOnly: true,

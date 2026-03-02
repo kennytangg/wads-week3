@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
@@ -24,18 +25,24 @@ export default function LogoutButton() {
         try {
             setLoading(true);
 
+            // Clear Better Auth session (for users who signed in with email/password)
+            await authClient.signOut();
+
+            // Clear custom session cookie (for users who signed in with Firebase/Google)
             const res = await fetch("/api/logout", {
                 method: "POST",
             });
 
-            if (!res.ok) throw new Error("Logout failed");
+            if (!res.ok) {
+                throw new Error("Failed to clear session");
+            }
 
-            toast.success("logout success");
-
+            toast.success("Successfully signed out");
             router.push("/login");
             router.refresh();
-        } catch (error: any) {
-            toast.error(error.message || "Errors");
+        } catch (err: unknown) {
+            console.error(err);
+            toast.error(err instanceof Error ? err.message : "Something went wrong");
         } finally {
             setLoading(false);
         }
@@ -44,21 +51,19 @@ export default function LogoutButton() {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="destructive">Logout</Button>
+                <Button variant="destructive">Log out</Button>
             </AlertDialogTrigger>
-
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
+                    <AlertDialogTitle>Sign out</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure want to logout?
+                        Are you sure you want to sign out?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleLogout} disabled={loading}>
-                        {loading ? "Logging out..." : "Yes, Logout"}
+                        {loading ? "Signing out…" : "Yes, sign out"}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
